@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3522/3522302.png"> 
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>(주)영선기계 Field Master</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  
+  <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+
+  <style>
+    /* [테마: 다크 & 영선 옐로우] */
+    :root {
+      --bg: #121212; --card: #1e1e1e; --primary: #FFCC00; 
+      --text: #fff; --sub: #aaa; --border: #333; --danger: #ff4444; --safe: #4CAF50;
+    }
+    * { box-sizing: border-box; font-family: 'Pretendard', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg); color: var(--text); margin: 0; padding-bottom: 85px; font-size: 16px; overscroll-behavior: none; }
+
+    .header { position: sticky; top: 0; z-index: 100; background: rgba(18,18,18,0.95); border-bottom: 2px solid var(--primary); padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { margin: 0; font-size: 1.2rem; color: var(--primary); font-weight: 800; }
+    
+    .container { padding: 15px; max-width: 600px; margin: 0 auto; }
+    .card { background: var(--card); border-radius: 10px; padding: 20px; margin-bottom: 15px; border: 1px solid var(--border); }
+    .card-title { color: var(--primary); font-size: 1.1rem; margin: 0 0 15px 0; font-weight: bold; border-left: 4px solid var(--primary); padding-left: 10px; }
+    .input-box { width: 100%; padding: 12px; background: #252525; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 1rem; margin-bottom: 10px; }
+    .hidden { display: none; }
+    /* 그리드 변경: 3열 대응 */
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+    /* 테이블 스타일 */
+    .steel-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+    .steel-table th { background: #2a2a2a; color: var(--primary); padding: 10px 5px; text-align: center; border-bottom: 1px solid #444; font-weight: 600; white-space: nowrap; position: sticky; top: 0; }
+    .steel-table td { padding: 8px 5px; border-bottom: 1px solid #333; text-align: center; color: #ddd; word-break: keep-all; }
+    .steel-table tr:nth-child(even) { background-color: rgba(255,255,255,0.03); }
+    .highlight { color: var(--primary); font-weight: bold; }
+    
+    /* 스크롤 메뉴 */
+    .scroll-menu { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; white-space: nowrap; scrollbar-width: none; }
+    .scroll-menu::-webkit-scrollbar { display: none; }
+    .btn-steel { background: #333; color: #ccc; border: 1px solid #555; padding: 10px 15px; border-radius: 20px; font-size: 0.9rem; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
+    .btn-steel.active { background: var(--primary); color: #000; border-color: var(--primary); font-weight: bold; }
+
+    /* 스펙 표시용 */
+    .spec-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #333; }
+    .spec-label { color: var(--sub); }
+    .spec-val { font-weight: bold; color: #fff; text-align: right; }
+    .shape-guide { font-size: 0.8rem; color: #aaa; background: #252525; padding: 10px; border-radius: 5px; margin-bottom: 10px; line-height: 1.4; border: 1px dashed #444; }
+
+    /* 탭바 */
+    .nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #1a1a1a; border-top: 1px solid #333; display: flex; justify-content: space-between; padding: 10px 0 20px 0; z-index: 200; }
+    .nav-btn { background: none; border: none; color: #666; font-size: 0.7rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+    .nav-btn.active { color: var(--primary); font-weight: bold; }
+    .nav-icon { font-size: 1.4rem; margin-bottom: 2px; }
+
+    /* [수정됨] 이미지 모달 & Panzoom 스타일 */
+    .modal-overlay { 
+      position: fixed; top:0; left:0; width:100vw; height:100vh; 
+      background:rgba(0,0,0,0.95); z-index: 2000; 
+      display: flex; flex-direction: column; 
+      opacity: 0; pointer-events: none; transition: 0.3s; 
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    
+    .modal-header {
+      width: 100%; padding: 15px; display: flex; justify-content: flex-end; z-index: 2001;
+      background: rgba(0,0,0,0.5);
+    }
+    .close-modal { 
+      background: rgba(255,255,255,0.2); color: #fff; border: 1px solid #fff;
+      padding: 8px 15px; border-radius: 20px; font-size: 1rem; cursor: pointer; 
+    }
+
+    .panzoom-container {
+      flex: 1; width: 100%; overflow: hidden; display: flex; justify-content: center; align-items: center;
+      padding: 10px;
+    }
+    /* 이미지가 화면에 딱 맞게(contain) 뜨도록 설정 */
+    .panzoom-element { 
+      max-width: 100%; max-height: 100%; 
+      object-fit: contain; 
+    }
+
+    .btn-draw { width: 100%; background: #444; color: var(--primary); border: 1px solid var(--primary); padding: 12px; border-radius: 6px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+    .btn-draw:active { background: var(--primary); color: #000; }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <h1>(주)영선기계 <span>MASTER</span></h1>
+    <div onclick="window.location.reload()" style="cursor:pointer;">🔄</div>
+  </header>
+
+  <div class="container">
+
+    <div id="tab1" class="tab-content">
+      <div class="card">
+        <h3 class="card-title">🏗️ 호이스트 제원 (Spec)</h3>
+        
+        <label style="color:#aaa; font-size:0.8rem; margin-bottom:5px; display:block;">호이스트 종류</label>
+        <select id="hType" class="input-box" onchange="updateCapOptions()">
+          <option value="mono_std">1. 모노레일 (일반)</option>
+          <option value="mono_crp">2. 모노레일 (크립/Creep)</option>
+          <option value="double_std">3. 더블거더 (일반)</option>
+          <option value="double_crp">4. 더블거더 (크립/Creep)</option>
+          <option value="main_std">5. 주권보권 (일반)</option>
+          <option value="main_crp">6. 주권보권 (크립/Creep)</option>
+        </select>
+
+        <label style="color:#aaa; font-size:0.8rem; margin-bottom:5px; display:block;">용량 (TON)</label>
+        <select id="hCap" class="input-box" onchange="renderHoistSpec()">
+          </select>
+
+        <div id="hoistSpecView" style="background: #252525; padding: 15px; border-radius: 8px; margin-top:5px;">
+          <div style="text-align:center; color:#666;">데이터 로딩중...</div>
+        </div>
+
+        <button class="btn-draw" onclick="openDrawing()">📐 도면 보기 (확대/축소)</button>
+      </div>
+    </div>
+
+    <div id="tab2" class="tab-content hidden">
+      <div class="card">
+        <h3 class="card-title">⛓️ 와이어로프 양정 계산</h3>
+        <div class="grid-3">
+          <div>
+            <label style="color:#aaa; font-size:0.7rem;">용량</label>
+            <select id="wireTon" class="input-box" style="padding:8px; font-size:0.9rem;" onchange="findWire()">
+              <option value="0.5">0.5T</option><option value="1">1T</option><option value="2">2T</option>
+              <option value="3">3T(2.8)</option><option value="5">5T</option><option value="7.5">7.5T</option>
+              <option value="10">10T</option><option value="15">15T</option><option value="20">20T</option><option value="30">30T</option>
+            </select>
+          </div>
+          <div>
+            <label style="color:#aaa; font-size:0.7rem;">타입</label>
+            <select id="wireType" class="input-box" style="padding:8px; font-size:0.9rem;" onchange="findWire()">
+              <option value="N">N (표준)</option><option value="L">L (로헤드)</option><option value="D">D (더블)</option>
+            </select>
+          </div>
+          <div>
+            <label style="color:#aaa; font-size:0.7rem;">양정</label>
+            <select id="wireLift" class="input-box" style="padding:8px; font-size:0.9rem;" onchange="findWire()">
+              <option value="6">6 M</option><option value="12">12 M</option><option value="18">18 M</option>
+              <option value="24">24 M</option><option value="30">30 M</option>
+            </select>
+          </div>
+        </div>
+        
+        <div style="background:#333; padding:15px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
+          <div id="wireResult" style="color:var(--primary); font-size:1.1rem; font-weight:bold; word-break:break-all;">-</div>
+          <button onclick="copyWireResult()" style="background:#555; border:none; color:#fff; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer; flex-shrink:0; margin-left:10px;">복사</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">🔩 볼트 & 스패너 (M규격)</h3>
+        <table class="steel-table">
+          <thead><tr><th>호칭</th><th>피치</th><th>스패너(mm)</th></tr></thead>
+          <tbody>
+            <tr><td>M3</td><td>0.5</td><td>5.5</td></tr>
+            <tr><td>M4</td><td>0.7</td><td>7</td></tr>
+            <tr><td>M5</td><td>0.8</td><td>8</td></tr>
+            <tr><td>M6</td><td>1.0</td><td>10</td></tr>
+            <tr><td>M8</td><td>1.25</td><td>13</td></tr>
+            <tr><td>M10</td><td>1.5</td><td class="highlight">17</td></tr>
+            <tr><td>M12</td><td>1.75</td><td class="highlight">19</td></tr>
+            <tr><td>M14</td><td>2.0</td><td>22</td></tr>
+            <tr><td>M16</td><td>2.0</td><td class="highlight">24</td></tr>
+            <tr><td>M20</td><td>2.5</td><td class="highlight">30</td></tr>
+            <tr><td>M22</td><td>2.5</td><td>32</td></tr>
+            <tr><td>M24</td><td>3.0</td><td class="highlight">36</td></tr>
+            <tr><td>M27</td><td>3.0</td><td>41</td></tr>
+            <tr><td>M30</td><td>3.5</td><td class="highlight">46</td></tr>
+            <tr><td>M36</td><td>4.0</td><td>55</td></tr>
+            <tr><td>M42</td><td>4.5</td><td>65</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title" style="border-left-color: var(--safe); color: var(--safe);">🎗️ 슬링벨트 제한하중</h3>
+        <table class="steel-table">
+          <thead><tr><th>폭(mm)</th><th>색상</th><th>1줄(T)</th><th>2줄(T)</th></tr></thead>
+          <tbody>
+            <tr><td>25 mm</td><td style="color:#D8BFD8">보라</td><td>1.0</td><td>2.0</td></tr>
+            <tr><td>50 mm</td><td style="color:#90EE90">녹색</td><td>2.0</td><td>4.0</td></tr>
+            <tr><td>75 mm</td><td style="color:#FFFFE0">노랑</td><td>3.0</td><td>6.0</td></tr>
+            <tr><td>100 mm</td><td style="color:#ddd">회색</td><td>4.0</td><td>8.0</td></tr>
+            <tr><td>125 mm</td><td style="color:#ff6666">빨강</td><td>5.0</td><td>10.0</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title" style="border-left-color: var(--safe); color: var(--safe);">⚓ 샤클 규격 (SC형)</h3>
+        <table class="steel-table">
+          <thead><tr><th>인치(inch)</th><th>핀(mm)</th><th>사용하중(WLL)</th></tr></thead>
+          <tbody>
+            <tr><td>1/2"</td><td>14~16</td><td>2.0 Ton</td></tr>
+            <tr><td>5/8"</td><td>18~19</td><td>3.25 Ton</td></tr>
+            <tr><td>3/4"</td><td>21~22</td><td>4.75 Ton</td></tr>
+            <tr><td>7/8"</td><td>24~25</td><td>6.5 Ton</td></tr>
+            <tr><td>1"</td><td>28~30</td><td>8.5 Ton</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab3" class="tab-content hidden">
+      <div class="card">
+        <h3 class="card-title">📏 철강 규격 (Steel)</h3>
+        <div class="scroll-menu">
+          <button class="btn-steel" onclick="loadData('H-Beam', this)">H형강</button>
+          <button class="btn-steel" onclick="loadData('I-Beam', this)">I형강</button>
+          <button class="btn-steel" onclick="loadData('Channel', this)">ㄷ형강</button>
+          <button class="btn-steel" onclick="loadData('Angle', this)">등변앵글</button>
+          <button class="btn-steel" onclick="loadData('Pipe', this)">파이프</button>
+          <button class="btn-steel" onclick="loadData('Rail', this)">레일</button>
+          <button class="btn-steel" onclick="loadData('Flat', this)">평철</button>
+          <button class="btn-steel" onclick="loadData('Conduit', this)">전선관</button>
+          <button class="btn-steel" onclick="loadData('HR', this)">압연강판</button>
+          <button class="btn-steel" onclick="loadData('Check', this)">무늬강판</button>
+          <button class="btn-steel" onclick="loadData('STS', this)">스텐강판</button>
+        </div>
+        
+        <div id="dataContainer" style="margin-top:15px; min-height:150px;">
+          <div style="text-align:center; color:#666; padding:30px;">
+            상단 버튼을 눌러 자재를 선택하세요.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab4" class="tab-content hidden">
+      <div class="card">
+        <h3 class="card-title">⚙️ 호이스트 휠 (Wheel)</h3>
+        <table class="steel-table">
+          <thead><tr><th>호칭경(Ø)</th><th>트레드 폭(B)</th><th>적용 톤수</th></tr></thead>
+          <tbody>
+            <tr><td>Ø 120</td><td>35 mm</td><td>0.5 ~ 1T</td></tr>
+            <tr><td>Ø 150</td><td>45 mm</td><td>1 ~ 2T</td></tr>
+            <tr><td>Ø 180</td><td>55 mm</td><td>2.8T</td></tr>
+            <tr><td>Ø 200</td><td>60 mm</td><td>3 ~ 5T</td></tr>
+            <tr><td>Ø 250</td><td>70 mm</td><td>5 ~ 7.5T</td></tr>
+            <tr><td>Ø 315</td><td>80 mm</td><td>10T 이상</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="imgModal" class="modal-overlay">
+    <div class="modal-header">
+      <button class="close-modal" onclick="closeDrawing()">닫기 ✖</button>
+    </div>
+    <div class="panzoom-container">
+      <img id="modalImg" class="panzoom-element" src="" alt="도면">
+    </div>
+    <div style="text-align:center; color:#999; font-size:0.8rem; padding-bottom:20px; z-index:2001;">
+      💡 두 손가락으로 확대/축소 및 이동 가능
+    </div>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-btn active" onclick="switchTab(1, this)">
+      <span class="nav-icon">🏗️</span>호이스트
+    </button>
+    <button class="nav-btn" onclick="switchTab(2, this)">
+      <span class="nav-icon">🛠️</span>기술자료
+    </button>
+    <button class="nav-btn" onclick="switchTab(3, this)">
+      <span class="nav-icon">📏</span>철강규격
+    </button>
+    <button class="nav-btn" onclick="switchTab(4, this)">
+      <span class="nav-icon">⚙️</span>자재규격
+    </button>
+  </nav>
+
+<script>
+  /* ========================================================
+     [Panzoom 로직 및 이미지 핸들링]
+     ======================================================== */
+  // 이미지 파일명 매핑
+  const drawingFiles = {
+    "mono_std": "mono_std.jpg",
+    "mono_crp": "mono_crp.jpg",
+    "double_std": "double_std.jpg",
+    "double_crp": "double_crp.jpg",
+    "main_std": "main_std.jpg",
+    "main_crp": "main_crp.jpg"
+  };
+
+  let panzoomInstance = null; // 줌 기능 인스턴스 저장 변수
+
+  function openDrawing() {
+    const type = document.getElementById('hType').value;
+    const fileName = drawingFiles[type];
+    const modal = document.getElementById('imgModal');
+    const img = document.getElementById('modalImg');
+
+    if(fileName) {
+      img.src = fileName;
+      modal.classList.add('open'); // 모달 열기
+
+      // 이미지 로딩 딜레이 고려하여 Panzoom 초기화
+      setTimeout(() => {
+        // 기존 인스턴스가 있으면 제거 (메모리 누수 방지)
+        if(panzoomInstance) {
+          panzoomInstance.dispose();
+        }
+        
+        // 새 Panzoom 인스턴스 생성
+        panzoomInstance = Panzoom(img, {
+          maxScale: 5,        // 최대 5배 확대
+          minScale: 0.5,      // 최소 0.5배 축소
+          contain: 'outside', // 이미지가 화면 밖으로 너무 나가지 않게 제한
+          startScale: 1       // 시작 배율
+        });
+
+        // 마우스 휠 줌 기능 추가 (PC 테스트용)
+        img.parentElement.addEventListener('wheel', panzoomInstance.zoomWithWheel);
+      }, 100);
+
+    } else {
+      alert('연결된 도면 이미지가 없습니다.');
+    }
+  }
+
+  function closeDrawing() {
+    const modal = document.getElementById('imgModal');
+    modal.classList.remove('open');
+    
+    // 모달 닫을 때 줌 기능 해제 및 초기화
+    if(panzoomInstance) {
+      panzoomInstance.dispose();
+      panzoomInstance = null;
+    }
+  }
+
+  /* ========================================================
+     [기존 호이스트 제원 데이터]
+     ======================================================== */
+  const hoistSpecs = {
+    "mono_std": {
+      "1T": { speedH: "10/12 (50/60Hz)", speedT: "20/24", motorH: "1.2 x 4P", motorT: "0.4 x 4P", wire: "Φ6 x 2줄" },
+      "2T": { speedH: "8.4/10", speedT: "20/24", motorH: "3.7 x 4P", motorT: "0.75 x 4P", wire: "Φ10 x 2줄" },
+      "2.8T": { speedH: "7.5/9", speedT: "20/24", motorH: "4.8 x 4P", motorT: "0.75 x 4P", wire: "Φ12.5 x 2줄" },
+      "3T": { speedH: "7.5/9", speedT: "20/24", motorH: "5.5 x 4P", motorT: "0.75 x 4P", wire: "Φ12.5 x 2줄" },
+      "5T": { speedH: "4.7/5.6", speedT: "20/24", motorH: "5.5 x 6P", motorT: "0.75 x 4P", wire: "Φ16 x 2줄" }
+    },
+    "mono_crp": {
+      "1T": { speedH: "10/1(Hi/Crp)", speedT: "20/13", motorH: "2.4/0.4", motorT: "0.4/0.2", wire: "Φ8 x 2줄" },
+      "2T": { speedH: "8.4/0.84", speedT: "20/13", motorH: "3.7/0.4", motorT: "0.75/0.5", wire: "Φ10 x 2줄" },
+      "2.8T": { speedH: "7.5/0.75", speedT: "20/13", motorH: "4.8/1.1", motorT: "0.75/0.5", wire: "Φ12.5 x 2줄" },
+      "5T": { speedH: "4.7/0.47", speedT: "20/13", motorH: "5.5/1", motorT: "0.75/0.5", wire: "Φ16 x 2줄" }
+    },
+    "double_std": {
+      "2T": { speedH: "8.4/10", speedT: "20/24", motorH: "3.7", motorT: "0.75", wire: "Φ8 x 4줄" },
+      "2.8T": { speedH: "7.5/9", speedT: "20/24", motorH: "4.8", motorT: "0.75", wire: "Φ9 x 4줄" },
+      "5T": { speedH: "4.7/5.6", speedT: "20/24", motorH: "5.5", motorT: "0.75", wire: "Φ12.5 x 4줄" }
+    },
+    "double_crp": {
+      "2T": { speedH: "8.4/0.84", speedT: "20/13", motorH: "3.7/0.4", motorT: "0.75/0.5", wire: "Φ8 x 4줄" },
+      "2.8T": { speedH: "7.5/0.75", speedT: "20/13", motorH: "4.8/1.1", motorT: "0.75/0.5", wire: "Φ9 x 4줄" },
+      "5T": { speedH: "4.7/0.47", speedT: "20/13", motorH: "5.5/1", motorT: "0.75/0.5", wire: "Φ12.5 x 4줄" }
+    },
+    "main_std": {
+      "5/3T": { speedH: "Main 4.7 / Aux 7.5", speedT: "20", motorH: "5.5 / 5.5", wire: "Main Φ12.5" },
+      "7.5/3T": { speedH: "Main 3.1 / Aux 7.5", speedT: "12.5", motorH: "5.5 / 5.5", wire: "Main Φ14" },
+      "10/5T": { speedH: "Main 3.7 / Aux 4.7", speedT: "12.5", motorH: "9 / 5.5", wire: "Main Φ16" }
+    },
+    "main_crp": {
+      "5/3T": { speedH: "4.7/0.47 (M)", speedT: "20/13", motorH: "5.5/1 (M)", wire: "Φ12.5 x 4줄" },
+      "10/5T": { speedH: "3.7/0.37 (M)", speedT: "12.5/8.3", motorH: "9/1.1 (M)", wire: "Φ16 x 4줄" }
+    }
+  };
+
+  /* ========================================================
+     [기존 철강/와이어 데이터 유지]
+     ======================================================== */
+  const wireDB = {
+    "0.5": {
+      "N": { "6": "Φ 6*13.5m (6*19)", "12": "Φ 6*25.5m (6*19)", "18": "Φ 6*37.5m (6*19)", "24": "Φ 6*49.5m (6*19)", "30": "Φ 6*61.8m (6*19)" },
+      "L": { "6": "Φ 4*27m (6*7)" }, "D": {}
+    },
+    "1": {
+      "N": { "6": "Φ 8*14m (5*19)", "12": "Φ 8*26m (6*19)", "18": "Φ 8*38m (4*fi29)", "24": "Φ 8*50m (4*fi29)", "30": "Φ 8*62m (4*fi29)" },
+      "L": { "6": "Φ 6*27m (6*19)" }, "D": {}
+    },
+    "2": {
+      "N": { "6": "Φ 10*15m (6*37)", "12": "Φ 10*26.5m (6*37)", "18": "Φ 10*38.5m (4*fi29)", "24": "Φ 10*50.5m (4*fi29)", "30": "Φ 10*62.6m (4*fi29)" },
+      "L": { "6": "Φ 8*28m (6*19)" }, "D": { "12": "Φ 8*53m (6*37)" }
+    },
+    "3": {
+      "N": { "6": "Φ 12.5*15m (6*37)", "12": "Φ 12.5*27m (6*37)", "18": "Φ 12.5*39m (4*fi29)", "24": "Φ 12.5*51m (4*fi29)", "30": "Φ 10*63m (4*fi29)" },
+      "L": { "6": "Φ 9*29m (6*37)" }, "D": { "12": "Φ 9*53m (6*37)", "18": "Φ 9*78m (6*37)", "24": "Φ 9*103m (6*37)" }
+    },
+    "5": {
+      "N": { "6": "Φ 16*15m (6*37)", "12": "Φ 16*28m (6*37)", "18": "Φ 16*39m (6*37)", "24": "Φ 16*51m (6*37)", "30": "Φ 16*63m (4*fi29)" },
+      "L": { "6": "Φ 11.2*30m (6*37)" }, "D": { "12": "Φ 11.2*56m (6*37)", "18": "Φ 11.2*85m (6*37)", "24": "Φ 11.2*112m (6*37)" }
+    },
+    "7.5": { "N": { "12": "Φ 14*54m (6*37)", "18": "Φ 14*85m (6*37)", "24": "Φ 14*108m (6*37)" }, "L": {}, "D": { "12": "Φ 14*54m (6*37)", "18": "Φ 14*85m (6*37)", "24": "Φ 14*108m (6*37)" } },
+    "10": { "N": { "12": "Φ 16*55m (6*37)", "18": "Φ 16*82m (6*37)", "24": "Φ 16*103m (6*37)" }, "L": {}, "D": { "12": "Φ 16*55m (6*37)", "18": "Φ 16*82m (6*37)", "24": "Φ 16*103m (6*37)" } },
+    "15": { "N": { "12": "Φ 20*55m (6*37)", "18": "Φ 20*80m (6*37)", "24": "Φ 20*110m (6*37)" }, "L": {}, "D": { "12": "Φ 20*55m (6*37)", "18": "Φ 20*80m (6*37)", "24": "Φ 20*110m (6*37)" } },
+    "20": { "N": { "12": "Φ 22.4*56m (6*37)", "18": "Φ 22.4*85m (6*37)", "24": "Φ 22.4*110m (6*37)" }, "L": {}, "D": { "12": "Φ 22.4*56m (6*37)", "18": "Φ 22.4*85m (6*37)", "24": "Φ 22.4*110m (6*37)" } },
+    "30": { "N": { "12": "Φ 22.4*84m (6*37)", "18": "Φ 22.4*125m (6*37)" }, "L": {}, "D": { "12": "Φ 22.4*84m (6*37)", "18": "Φ 22.4*125m (6*37)" } }
+  };
+
+  const guides = {
+    "H-Beam": "H(높이) x B(폭) x t1(웹) x t2(플랜지)",
+    "I-Beam": "H(높이) x B(폭) x t1(웹) x t2(플랜지)",
+    "Channel": "H(높이) x B(폭) x t1(웹) x t2(플랜지)",
+    "Angle": "A(변) x B(변) x t(두께) / 등변 기준",
+    "Pipe": "배관용 탄소강관 (KS D 3507) / 백관, 흑관",
+    "Rail": "호칭 (kg/m) 기준 주요 치수",
+    "Flat": "폭(W) x 두께(t) 별 무게 (kg/m)",
+    "Conduit": "후강전선관(G) / 외경 x 두께 / 무게(4m)",
+    "HR": "4'x8' / 5'x10' 무게 (비중 7.85)",
+    "Check": "4'x8' / 5'x10' 무게 (비중 7.85)",
+    "STS": "SUS304 기준 두께별 무게 (비중 7.93)"
+  };
+
+  const steelDB = {
+    "Angle": { 
+      head: ["규격 (AxB)", "두께 (t)", "단중"],
+      data: [
+        ["20 x 20", "3t / 4t", "0.88 / 1.14"],
+        ["25 x 25", "3t / 4t", "1.12 / 1.45"],
+        ["30 x 30", "3t / 4t", "1.36 / 1.77"],
+        ["40 x 40", "3t / 4t / 5t", "1.83 / 2.42 / 2.95"],
+        ["50 x 50", "4t / 5t / 6t", "3.06 / 3.79 / 4.43"],
+        ["60 x 60", "4t / 5t / 6t", "3.68 / 4.55 / 5.42"],
+        ["65 x 65", "5t / 6t / 8t", "4.94 / 5.91 / 7.66"],
+        ["75 x 75", "6t / 9t / 12t", "6.85 / 10.1 / 13.0"],
+        ["90 x 90", "6t / 7t / 10t", "8.33 / 9.63 / 13.3"],
+        ["100 x 100", "7t / 10t / 13t", "10.7 / 14.9 / 19.1"]
+      ]
+    },
+    "Pipe": {
+      head: ["호칭(A/B)", "외경(mm)", "두께(t) / 무게(kg/m)"],
+      data: [
+        ["15A (1/2B)", "21.7", "2.8t / 1.31"],
+        ["20A (3/4B)", "27.2", "2.8t / 1.68"],
+        ["25A (1B)", "34.0", "3.2t / 2.43"],
+        ["32A (1¼B)", "42.7", "3.5t / 3.38"],
+        ["40A (1½B)", "48.6", "3.5t / 3.89"],
+        ["50A (2B)", "60.5", "3.8t / 5.31"],
+        ["65A (2½B)", "76.3", "4.2t / 7.47"],
+        ["80A (3B)", "89.1", "4.2t / 8.79"],
+        ["100A (4B)", "114.3", "4.5t / 12.2"]
+      ]
+    },
+    "Flat": { 
+      head: ["폭 (mm)", "두께(t) 별 무게 (kg/m)"],
+      data: [
+        ["25 mm", "3t:0.59 / 4.5t:0.88 / 6t:1.18 / 9t:1.77"],
+        ["32 mm", "3t:0.75 / 4.5t:1.13 / 6t:1.51 / 9t:2.26"],
+        ["38 mm", "3t:0.90 / 4.5t:1.34 / 6t:1.79 / 9t:2.68"],
+        ["50 mm", "4.5t:1.77 / 6t:2.36 / 9t:3.53 / 12t:4.71"],
+        ["65 mm", "6t:3.06 / 9t:4.59 / 12t:6.12 / 19t:9.69"],
+        ["75 mm", "6t:3.53 / 9t:5.30 / 12t:7.07 / 19t:11.2"],
+        ["100 mm", "6t:4.71 / 9t:7.07 / 12t:9.42 / 19t:14.9"]
+      ]
+    },
+    "H-Beam": {
+      head: ["규격 (H x B)", "두께 (t1/t2)", "단중"],
+      data: [
+        ["100 x 50", "5 / 7", "9.3"], ["100 x 100", "6 / 8", "17.2"],
+        ["125 x 60", "6 / 8", "13.2"], ["125 x 125", "6.5 / 9", "23.8"],
+        ["150 x 75", "5 / 7", "14.0"], ["150 x 150", "7 / 10", "31.5"],
+        ["175 x 90", "5 / 8", "18.1"], ["194 x 150", "6 / 9", "29.9"],
+        ["200 x 100", "5.5 / 8", "21.3"], ["200 x 200", "8 / 12", "49.9"],
+        ["244 x 175", "7 / 11", "44.1"], ["250 x 125", "6 / 9", "29.6"],
+        ["294 x 200", "8 / 12", "56.8"], ["300 x 150", "6.5 / 9", "36.7"],
+        ["300 x 300", "10 / 15", "94.0"], ["350 x 175", "7 / 11", "49.6"],
+        ["400 x 200", "8 / 13", "66.0"]
+      ]
+    },
+    "I-Beam": {
+      head: ["규격 (H x B)", "두께 (t1/t2)", "단중"],
+      data: [
+        ["100 x 75", "5 / 8", "12.9"], ["125 x 75", "5.5 / 9.5", "16.1"],
+        ["150 x 75", "5.5 / 9.5", "17.1"], ["200 x 100", "7 / 10", "26.0"],
+        ["250 x 125", "7.5 / 12.5", "38.3"], ["300 x 150", "8 / 13", "48.3"]
+      ]
+    },
+    "Channel": {
+      head: ["규격 (H x B)", "두께 (t1/t2)", "단중"],
+      data: [
+        ["75 x 40", "5 / 7", "6.92"], ["100 x 50", "5 / 7.5", "9.36"],
+        ["125 x 65", "6 / 8", "13.4"], ["150 x 75", "6.5 / 10", "18.6"],
+        ["200 x 80", "7.5 / 11", "24.6"]
+      ]
+    },
+    "Rail": {
+      head: ["호칭", "H x B x Head", "단중"],
+      data: [
+        ["10 kg", "63.5 x 63.5 x 32.1", "9.95"], ["15 kg", "79.4 x 79.4 x 42.9", "15.2"],
+        ["22 kg", "93.7 x 93.7 x 46.0", "22.3"], ["30 kg", "108 x 108 x 60.3", "30.1"],
+        ["37 kg", "122 x 122 x 62.7", "37.2"], ["50 kg N", "153 x 127 x 65.0", "50.4"]
+      ]
+    },
+    "Conduit": {
+      head: ["호칭 (G)", "외경 x 두께", "무게(4m)"],
+      data: [
+        ["G16 / G22", "21.0 / 26.5", "4.24 / 5.48"], ["G28 / G36", "33.3 / 41.9", "7.04 / 9.00"],
+        ["G42 / G54", "47.8 / 59.6", "10.3 / 15.7"], ["G70 / G82", "75.2 / 87.9", "20.0 / 23.5"]
+      ]
+    },
+    "HR": {
+      head: ["두께 (t)", "4'x8' 무게", "5'x10' 무게"],
+      data: [
+        ["1.6 / 2.3", "29.8 / 42.9", "46.5 / 66.9"], ["3.2 / 4.5", "59.7 / 83.9", "93.0 / 131"],
+        ["6.0 / 9.0", "112 / 168", "175 / 262"], ["12 / 16", "224 / 298", "349 / 466"],
+        ["19 / 25", "354 / 466", "553 / 728"]
+      ]
+    },
+    "Check": {
+      head: ["두께 (t)", "4'x8' 무게", "5'x10' 무게"],
+      data: [
+        ["3.2 t", "63.9 kg", "99.8 kg"], ["4.5 t", "88.1 kg", "138 kg"],
+        ["6.0 t", "116 kg", "181 kg"]
+      ]
+    },
+    "STS": {
+      head: ["두께 (t)", "4'x8' (304)", "5'x10' (304)"],
+      data: [
+        ["0.5 / 0.8", "11.8 / 18.9", "18.4 / 29.4"], ["1.0 / 1.2", "23.6 / 28.3", "36.8 / 44.2"],
+        ["1.5 / 2.0", "35.4 / 47.1", "55.2 / 73.6"], ["3.0 / 4.0", "70.7 / 94.2", "110 / 147"]
+      ]
+    }
+  };
+
+  /* ========================================================
+     [초기화 및 공통 로직]
+     ======================================================== */
+  window.onload = function() {
+    updateCapOptions(); // 탭1 초기화
+    findWire();         // 탭2 초기화
+  };
+
+  function switchTab(idx, btn) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    document.getElementById('tab'+idx).classList.remove('hidden');
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function updateCapOptions() {
+    const type = document.getElementById('hType').value;
+    const capSelect = document.getElementById('hCap');
+    capSelect.innerHTML = "";
+    
+    if(hoistSpecs[type]) {
+      Object.keys(hoistSpecs[type]).forEach(ton => {
+        let opt = document.createElement('option');
+        opt.value = ton;
+        opt.innerText = ton + " Ton";
+        capSelect.appendChild(opt);
+      });
+    } else {
+      capSelect.innerHTML = "<option>데이터 없음</option>";
+    }
+    renderHoistSpec();
+  }
+
+  function renderHoistSpec() {
+    const type = document.getElementById('hType').value;
+    const cap = document.getElementById('hCap').value;
+    const data = (hoistSpecs[type] && hoistSpecs[type][cap]) ? hoistSpecs[type][cap] : null;
+    
+    let html = "";
+    if(data) {
+      html += `<div class="spec-row"><span class="spec-label">권상 속도 (m/min)</span><span class="spec-val">${data.speedH}</span></div>`;
+      html += `<div class="spec-row"><span class="spec-label">주행 속도 (m/min)</span><span class="spec-val">${data.speedT}</span></div>`;
+      html += `<div class="spec-row"><span class="spec-label">권상 모터 (kW)</span><span class="spec-val">${data.motorH}</span></div>`;
+      if(data.motorT) html += `<div class="spec-row"><span class="spec-label">주행 모터 (kW)</span><span class="spec-val">${data.motorT}</span></div>`;
+      html += `<div class="spec-row"><span class="spec-label">와이어 규격</span><span class="spec-val">${data.wire}</span></div>`;
+    } else {
+      html = `<div style="text-align:center; padding:20px; color:#666;">해당 규격 데이터가 없습니다.<br>도면을 참고하세요.</div>`;
+    }
+    document.getElementById('hoistSpecView').innerHTML = html;
+  }
+
+  function findWire() {
+    const t = document.getElementById('wireTon').value;
+    const type = document.getElementById('wireType').value;
+    const l = document.getElementById('wireLift').value;
+    
+    let res = "-";
+    try {
+      if(wireDB[t] && wireDB[t][type] && wireDB[t][type][l]) {
+        res = wireDB[t][type][l];
+      } else {
+        res = "해당 사양 없음";
+      }
+    } catch(e) { res = "-"; }
+    
+    document.getElementById('wireResult').innerText = res;
+  }
+  
+  function copyWireResult() {
+    const txt = document.getElementById('wireResult').innerText;
+    if(txt === '-' || txt === '해당 사양 없음') return;
+    navigator.clipboard.writeText(txt).then(() => {
+      alert('규격이 복사되었습니다: ' + txt);
+    });
+  }
+  
+  function loadData(type, btn) {
+    document.querySelectorAll('.btn-steel').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    const db = steelDB[type];
+    const guideText = guides[type] || "";
+    if(!db) { document.getElementById('dataContainer').innerHTML = "<br>데이터 준비중"; return; }
+
+    let html = `<div class="shape-guide">💡 <strong>${type}</strong><br>${guideText}</div>`;
+    html += `<table class="steel-table"><thead><tr>`;
+    db.head.forEach(h => html += `<th>${h}</th>`);
+    html += `</tr></thead><tbody>`;
+    db.data.forEach(row => {
+      html += `<tr>`;
+      row.forEach(cell => html += `<td>${cell}</td>`);
+      html += `</tr>`;
+    });
+    html += `</tbody></table>`;
+    document.getElementById('dataContainer').innerHTML = html;
+  }
+</script>
+</body>
+</html>
