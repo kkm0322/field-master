@@ -28,7 +28,6 @@
     .input-box { width: 100%; padding: 12px; background: #252525; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 1rem; margin-bottom: 10px; }
     .hidden { display: none; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
 
     /* 테이블 스타일 */
     .steel-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
@@ -97,8 +96,6 @@
     .btn-draw { width: 100%; background: #444; color: var(--primary); border: 1px solid var(--primary); padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
     .btn-draw:active { background: var(--primary); color: #000; }
     
-    .btn-parts { background: #333; color: #fff; border: 1px solid #666; } 
-
     /* 로그인 화면 */
     .login-wrapper {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -112,6 +109,40 @@
       box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     }
     .login-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
+
+    /* [NEW] 교육용 핫스팟 스타일 */
+    .hotspot-container { position: relative; width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid #444; background: #000; }
+    .edu-img { width: 100%; display: block; opacity: 0.8; }
+    .hotspot {
+      position: absolute; width: 24px; height: 24px;
+      background: rgba(255, 204, 0, 0.6);
+      border: 2px solid #fff; border-radius: 50%;
+      cursor: pointer; transform: translate(-50%, -50%);
+      box-shadow: 0 0 10px rgba(255, 204, 0, 0.8);
+      z-index: 10;
+      animation: pulse 1.5s infinite;
+    }
+    .hotspot:active { transform: translate(-50%, -50%) scale(1.2); background: var(--primary); }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255, 204, 0, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 204, 0, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 204, 0, 0); }
+    }
+
+    /* 정보 팝업 모달 */
+    .info-modal {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 85%; max-width: 320px; background: #252525;
+      padding: 20px; border-radius: 12px; border: 1px solid var(--primary);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 3000;
+      display: none; text-align: center;
+    }
+    .info-modal.active { display: block; animation: popIn 0.3s; }
+    @keyframes popIn { 0% { opacity: 0; transform: translate(-50%, -40%); } 100% { opacity: 1; transform: translate(-50%, -50%); } }
+    .info-title { color: var(--primary); font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; }
+    .info-desc { color: #ddd; font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; }
+    .info-close { width: 100%; padding: 10px; background: #444; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+    
   </style>
 </head>
 <body>
@@ -327,6 +358,33 @@
       </div>
     </div>
 
+    <div id="tab5" class="tab-content hidden">
+      <div class="card">
+        <h3 class="card-title" style="border-left-color:#00C4FF; color:#00C4FF;">🎓 크레인 명칭 학습</h3>
+        <p style="color:#aaa; font-size:0.85rem; margin-bottom:15px;">
+          노란색 포인트(🟡)를 터치하면 명칭과 설명이 나옵니다.
+        </p>
+        
+        <div class="hotspot-container">
+          <img src="crane_edu.jpg" alt="크레인 교육 이미지" class="edu-img">
+          
+          <div class="hotspot" style="top:35%; left:50%;" onclick="showInfo('메인 거더 (Main Girder)', '호이스트가 주행하는 레일 역할을 하는 메인 빔입니다. 하중을 지지하는 가장 중요한 구조물입니다.')"></div>
+          
+          <div class="hotspot" style="top:25%; left:85%;" onclick="showInfo('새들 (Saddle)', '공장 레일 위를 달리는 주행 바퀴가 들어있는 프레임입니다. 거더 양 끝에 설치됩니다.')"></div>
+          
+          <div class="hotspot" style="top:32%; left:92%;" onclick="showInfo('주행 모터 (Traveling Motor)', '크레인 전체를 공장 앞/뒤로 이동(주행)시키는 모터입니다. 새들 측면에 부착됩니다.')"></div>
+          
+          <div class="hotspot" style="top:55%; left:45%;" onclick="showInfo('전동 호이스트 (Electric Hoist)', '물건을 상/하로 들어 올리는 핵심 장치입니다. 권상 모터와 와이어 드럼으로 구성됩니다.')"></div>
+          
+          <div class="hotspot" style="top:52%; left:55%;" onclick="showInfo('횡행 모터 (Traversing Motor)', '호이스트를 좌/우로 이동(횡행)시키는 작은 모터입니다. 호이스트 측면에 붙어있습니다.')"></div>
+          
+          <div class="hotspot" style="top:18%; left:60%;" onclick="showInfo('급전 장치 (Festoon/C-Track)', '호이스트 이동 시 전원 케이블이 꼬이지 않게 잡아주는 커튼 레일 방식의 전원 공급 장치입니다.')"></div>
+          
+          <div class="hotspot" style="top:85%; left:42%;" onclick="showInfo('후크 블록 (Hook Block)', '와이어 끝에 달린 갈고리입니다. 슬링벨트 이탈 방지용 해지장치(안전핀)가 정상인지 항상 확인해야 합니다.')"></div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <div id="imgModal" class="modal-overlay">
@@ -342,6 +400,13 @@
     </div>
   </div>
 
+  <div id="infoPopup" class="info-modal">
+    <div id="infoTitle" class="info-title"></div>
+    <div id="infoDesc" class="info-desc"></div>
+    <button class="info-close" onclick="closeInfo()">확인</button>
+  </div>
+  <div id="infoOverlay" class="modal-overlay" onclick="closeInfo()" style="z-index:2999;"></div>
+
   <nav class="nav">
     <button class="nav-btn active" onclick="switchTab(1, this)">
       <span class="nav-icon">🏗️</span>호이스트
@@ -354,6 +419,9 @@
     </button>
     <button class="nav-btn" onclick="switchTab(4, this)">
       <span class="nav-icon">⚙️</span>자재규격
+    </button>
+    <button class="nav-btn" onclick="switchTab(5, this)">
+      <span class="nav-icon">🎓</span>교육자료
     </button>
   </nav>
 
@@ -392,33 +460,21 @@
     });
   });
 
-  // [기능] 표준 도면 보기 (이미지)
   function openDrawing() {
     const type = document.getElementById('hType').value;
     const fileName = drawingFiles[type];
     showModal(fileName);
   }
 
-  // [기능] 부품도 보기 (PDF 구글뷰어로 열기) - 다운로드 방지
   function openPartsPDF() {
     let cap = document.getElementById('partsTon').value;
     if(!cap) return alert("용량을 선택해주세요.");
-    
-    // PDF 파일명 규칙 (소문자)
     const fileName = cap + "ton.pdf";
-    
-    // 현재 URL을 기준으로 절대 주소 생성
-    // (GitHub Pages에서만 작동함)
     const fullUrl = new URL(fileName, window.location.href).href;
-    
-    // 구글 뷰어 URL 생성
     const viewerUrl = "https://docs.google.com/viewer?embedded=false&url=" + encodeURIComponent(fullUrl);
-    
-    // 새 창에서 뷰어 열기
     window.open(viewerUrl, '_blank');
   }
 
-  // 모달 표시 (이미지용)
   function showModal(fileName) {
     const modal = document.getElementById('imgModal');
     const img = document.getElementById('modalImg');
@@ -464,8 +520,21 @@
     }
   }
 
+  /* [NEW] 교육용 정보 팝업 로직 */
+  function showInfo(title, desc) {
+    document.getElementById('infoTitle').innerText = title;
+    document.getElementById('infoDesc').innerText = desc;
+    document.getElementById('infoPopup').classList.add('active');
+    document.getElementById('infoOverlay').classList.add('open');
+  }
+
+  function closeInfo() {
+    document.getElementById('infoPopup').classList.remove('active');
+    document.getElementById('infoOverlay').classList.remove('open');
+  }
+
   /* ========================================================
-     [호이스트 제원 (모터 극수 포함, 횡행 용어 수정)]
+     [호이스트 제원 데이터]
      ======================================================== */
   const hoistSpecs = {
     "mono_std": {
