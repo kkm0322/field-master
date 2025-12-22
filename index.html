@@ -6,8 +6,8 @@
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3522/3522302.png"> 
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>(주)영선기계 Field Master</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
   
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
   <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
 
   <style>
@@ -27,7 +27,6 @@
     .card-title { color: var(--primary); font-size: 1.1rem; margin: 0 0 15px 0; font-weight: bold; border-left: 4px solid var(--primary); padding-left: 10px; }
     .input-box { width: 100%; padding: 12px; background: #252525; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 1rem; margin-bottom: 10px; }
     .hidden { display: none; }
-    /* 그리드 변경: 3열 대응 */
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
     /* 테이블 스타일 */
@@ -55,7 +54,7 @@
     .nav-btn.active { color: var(--primary); font-weight: bold; }
     .nav-icon { font-size: 1.4rem; margin-bottom: 2px; }
 
-    /* [수정됨] 이미지 모달 & Panzoom 스타일 */
+    /* 이미지 모달 & Panzoom 스타일 */
     .modal-overlay { 
       position: fixed; top:0; left:0; width:100vw; height:100vh; 
       background:rgba(0,0,0,0.95); z-index: 2000; 
@@ -75,13 +74,24 @@
 
     .panzoom-container {
       flex: 1; width: 100%; overflow: hidden; display: flex; justify-content: center; align-items: center;
-      padding: 10px;
+      padding: 10px; position: relative;
     }
     /* 이미지가 화면에 딱 맞게(contain) 뜨도록 설정 */
     .panzoom-element { 
       max-width: 100%; max-height: 100%; 
       object-fit: contain; 
+      opacity: 0; transition: opacity 0.3s; /* 로딩 전엔 숨김 */
     }
+    .panzoom-element.loaded { opacity: 1; } /* 로딩 완료 후 표시 */
+
+    /* 로딩 스피너 애니메이션 */
+    .loader {
+      border: 5px solid #333; border-top: 5px solid var(--primary); border-radius: 50%;
+      width: 50px; height: 50px; animation: spin 1s linear infinite;
+      position: absolute; top: 45%; left: 45%; margin-top: -25px; margin-left: -25px;
+      z-index: 2002; display: none;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
     .btn-draw { width: 100%; background: #444; color: var(--primary); border: 1px solid var(--primary); padding: 12px; border-radius: 6px; font-weight: bold; margin-top: 10px; cursor: pointer; }
     .btn-draw:active { background: var(--primary); color: #000; }
@@ -258,6 +268,7 @@
       <button class="close-modal" onclick="closeDrawing()">닫기 ✖</button>
     </div>
     <div class="panzoom-container">
+      <div class="loader" id="spinner"></div>
       <img id="modalImg" class="panzoom-element" src="" alt="도면">
     </div>
     <div style="text-align:center; color:#999; font-size:0.8rem; padding-bottom:20px; z-index:2001;">
@@ -284,7 +295,6 @@
   /* ========================================================
      [Panzoom 로직 및 이미지 핸들링]
      ======================================================== */
-  // 이미지 파일명 매핑
   const drawingFiles = {
     "mono_std": "mono_std.jpg",
     "mono_crp": "mono_crp.jpg",
@@ -294,37 +304,44 @@
     "main_crp": "main_crp.jpg"
   };
 
-  let panzoomInstance = null; // 줌 기능 인스턴스 저장 변수
+  let panzoomInstance = null; 
+
+  window.addEventListener('load', () => {
+    Object.values(drawingFiles).forEach(file => {
+      const img = new Image();
+      img.src = file;
+    });
+  });
 
   function openDrawing() {
     const type = document.getElementById('hType').value;
     const fileName = drawingFiles[type];
     const modal = document.getElementById('imgModal');
     const img = document.getElementById('modalImg');
+    const spinner = document.getElementById('spinner');
 
     if(fileName) {
-      img.src = fileName;
-      modal.classList.add('open'); // 모달 열기
+      modal.classList.add('open'); 
+      img.classList.remove('loaded');
+      spinner.style.display = 'block';
 
-      // 이미지 로딩 딜레이 고려하여 Panzoom 초기화
-      setTimeout(() => {
-        // 기존 인스턴스가 있으면 제거 (메모리 누수 방지)
-        if(panzoomInstance) {
-          panzoomInstance.dispose();
-        }
+      // [수정됨] 에러 발생 시 경고창 띄우지 않고 스피너만 숨김
+      img.onerror = function() {
+        spinner.style.display = 'none';
+      };
+
+      img.onload = function() {
+        spinner.style.display = 'none'; 
+        img.classList.add('loaded');    
         
-        // 새 Panzoom 인스턴스 생성
+        if(panzoomInstance) panzoomInstance.dispose();
         panzoomInstance = Panzoom(img, {
-          maxScale: 5,        // 최대 5배 확대
-          minScale: 0.5,      // 최소 0.5배 축소
-          contain: 'outside', // 이미지가 화면 밖으로 너무 나가지 않게 제한
-          startScale: 1       // 시작 배율
+          maxScale: 5, minScale: 0.5, contain: 'outside', startScale: 1
         });
-
-        // 마우스 휠 줌 기능 추가 (PC 테스트용)
         img.parentElement.addEventListener('wheel', panzoomInstance.zoomWithWheel);
-      }, 100);
+      };
 
+      img.src = fileName;
     } else {
       alert('연결된 도면 이미지가 없습니다.');
     }
@@ -332,9 +349,12 @@
 
   function closeDrawing() {
     const modal = document.getElementById('imgModal');
-    modal.classList.remove('open');
+    const img = document.getElementById('modalImg');
     
-    // 모달 닫을 때 줌 기능 해제 및 초기화
+    modal.classList.remove('open');
+    img.src = ""; 
+    img.classList.remove('loaded');
+    
     if(panzoomInstance) {
       panzoomInstance.dispose();
       panzoomInstance = null;
@@ -342,40 +362,46 @@
   }
 
   /* ========================================================
-     [기존 호이스트 제원 데이터]
+     [업데이트된 호이스트 제원 데이터 (모터 극수 P 포함, 횡행 용어 수정)]
      ======================================================== */
   const hoistSpecs = {
     "mono_std": {
-      "1T": { speedH: "10/12 (50/60Hz)", speedT: "20/24", motorH: "1.2 x 4P", motorT: "0.4 x 4P", wire: "Φ6 x 2줄" },
-      "2T": { speedH: "8.4/10", speedT: "20/24", motorH: "3.7 x 4P", motorT: "0.75 x 4P", wire: "Φ10 x 2줄" },
-      "2.8T": { speedH: "7.5/9", speedT: "20/24", motorH: "4.8 x 4P", motorT: "0.75 x 4P", wire: "Φ12.5 x 2줄" },
-      "3T": { speedH: "7.5/9", speedT: "20/24", motorH: "5.5 x 4P", motorT: "0.75 x 4P", wire: "Φ12.5 x 2줄" },
-      "5T": { speedH: "4.7/5.6", speedT: "20/24", motorH: "5.5 x 6P", motorT: "0.75 x 4P", wire: "Φ16 x 2줄" }
+      "1T": { speedH: "10/12 (50/60Hz)", speedT: "20/24", motorH: "2.4kW x 4P", motorT: "0.4kW x 4P", wire: "Φ8 x 2줄" },
+      "2T": { speedH: "8.4/10", speedT: "20/24", motorH: "3.7kW x 4P", motorT: "0.75kW x 4P", wire: "Φ10 x 2줄" },
+      "2.8T": { speedH: "7.5/9", speedT: "20/24", motorH: "4.8kW x 4P", motorT: "0.75kW x 4P", wire: "Φ12.5 x 2줄" },
+      "3T": { speedH: "7.5/9", speedT: "20/24", motorH: "5.5kW x 4P", motorT: "0.75kW x 4P", wire: "Φ12.5 x 2줄" },
+      "5T": { speedH: "4.7/5.6", speedT: "20/24", motorH: "5.5kW x 6P", motorT: "0.75kW x 4P", wire: "Φ16 x 2줄" }
     },
     "mono_crp": {
-      "1T": { speedH: "10/1(Hi/Crp)", speedT: "20/13", motorH: "2.4/0.4", motorT: "0.4/0.2", wire: "Φ8 x 2줄" },
-      "2T": { speedH: "8.4/0.84", speedT: "20/13", motorH: "3.7/0.4", motorT: "0.75/0.5", wire: "Φ10 x 2줄" },
-      "2.8T": { speedH: "7.5/0.75", speedT: "20/13", motorH: "4.8/1.1", motorT: "0.75/0.5", wire: "Φ12.5 x 2줄" },
-      "5T": { speedH: "4.7/0.47", speedT: "20/13", motorH: "5.5/1", motorT: "0.75/0.5", wire: "Φ16 x 2줄" }
+      "1T": { speedH: "10/1 (Hi/Lo)", speedT: "20/13", motorH: "2.4/0.4kW x 4P", motorT: "0.4kW x 4P / 0.2kW x 6P", wire: "Φ8 x 2줄" },
+      "2T": { speedH: "8.4/0.84", speedT: "20/13", motorH: "3.7/0.4kW x 4P", motorT: "0.75kW x 4P / 0.5kW x 6P", wire: "Φ10 x 2줄" },
+      "2.8T": { speedH: "7.5/0.75", speedT: "20/13", motorH: "4.8/1.1kW x 4P", motorT: "0.75kW x 4P / 0.5kW x 6P", wire: "Φ12.5 x 2줄" },
+      "3T": { speedH: "7.5/0.75", speedT: "20/13", motorH: "5.5/1.1kW x 4P", motorT: "0.75kW x 4P / 0.5kW x 6P", wire: "Φ12.5 x 2줄" },
+      "5T": { speedH: "4.7/0.47", speedT: "20/13", motorH: "5.5/1kW x 6P", motorT: "0.75kW x 4P / 0.5kW x 6P", wire: "Φ16 x 2줄" }
     },
     "double_std": {
-      "2T": { speedH: "8.4/10", speedT: "20/24", motorH: "3.7", motorT: "0.75", wire: "Φ8 x 4줄" },
-      "2.8T": { speedH: "7.5/9", speedT: "20/24", motorH: "4.8", motorT: "0.75", wire: "Φ9 x 4줄" },
-      "5T": { speedH: "4.7/5.6", speedT: "20/24", motorH: "5.5", motorT: "0.75", wire: "Φ12.5 x 4줄" }
+      "2T": { speedH: "8.4/10", speedT: "20/24", motorH: "3.7kW x 4P", motorT: "0.75kW x 4P", wire: "Φ8 x 4줄" },
+      "2.8T": { speedH: "7.5/9", speedT: "20/24", motorH: "4.8kW x 4P", motorT: "0.75kW x 4P", wire: "Φ9 x 4줄" },
+      "3T": { speedH: "7.5/9", speedT: "20/24", motorH: "5.5kW x 4P", motorT: "0.75kW x 4P", wire: "Φ9 x 4줄" },
+      "5T": { speedH: "4.7/5.6", speedT: "20/24", motorH: "5.5kW x 6P", motorT: "0.75kW x 4P", wire: "Φ12.5 x 4줄" }
     },
     "double_crp": {
-      "2T": { speedH: "8.4/0.84", speedT: "20/13", motorH: "3.7/0.4", motorT: "0.75/0.5", wire: "Φ8 x 4줄" },
-      "2.8T": { speedH: "7.5/0.75", speedT: "20/13", motorH: "4.8/1.1", motorT: "0.75/0.5", wire: "Φ9 x 4줄" },
-      "5T": { speedH: "4.7/0.47", speedT: "20/13", motorH: "5.5/1", motorT: "0.75/0.5", wire: "Φ12.5 x 4줄" }
+      "2T": { speedH: "8.4/0.84", speedT: "20/13", motorH: "3.7/0.4kW x 4P", motorT: "0.75kW x 4P / 0.5kW x 6P", wire: "Φ8 x 4줄" },
+      "2.8T": { speedH: "7.5/0.75", speedT: "20/13", motorH: "4.8/1.1kW x 4P", motorT: "0.75kW x 4P / 0.5kW x 6P", wire: "Φ9 x 4줄" },
+      "3T": { speedH: "7.5/0.75", speedT: "20/13", motorH: "5.5/1.1kW x 4P", motorT: "0.75kW x 4P / 0.5kW x 6P", wire: "Φ9 x 4줄" },
+      "5T": { speedH: "4.7/0.47", speedT: "20/13", motorH: "5.5/1kW x 6P", motorT: "0.75kW x 4P / 0.5kW x 6P", wire: "Φ12.5 x 4줄" }
     },
     "main_std": {
-      "5/3T": { speedH: "Main 4.7 / Aux 7.5", speedT: "20", motorH: "5.5 / 5.5", wire: "Main Φ12.5" },
-      "7.5/3T": { speedH: "Main 3.1 / Aux 7.5", speedT: "12.5", motorH: "5.5 / 5.5", wire: "Main Φ14" },
-      "10/5T": { speedH: "Main 3.7 / Aux 4.7", speedT: "12.5", motorH: "9 / 5.5", wire: "Main Φ16" }
+      "5/3T": { speedH: "Main 4.7 / Aux 7.5", speedT: "20/24", motorH: "Main 5.5kW x 6P / Aux 4.2kW x 8P", motorT: "0.75kW x 4P / 0.5kW x 6P", wire: "Main Φ12.5 / Aux Φ12.5" },
+      "7.5/3T": { speedH: "Main 3.1 / Aux 7.5", speedT: "12.5/15", motorH: "Main 5.5kW x 6P / Aux 5.5kW x 4P", motorT: "0.75kW x 4P / 0.5kW x 6P", wire: "Main Φ14 / Aux Φ12.5" },
+      "10/5T": { speedH: "Main 3.7 / Aux 4.7", speedT: "12.5/15", motorH: "Main 9kW x 8P / Aux 5.5kW x 6P", motorT: "0.75kW x 4P / 0.5kW x 6P", wire: "Main Φ16 / Aux Φ16" },
+      "15/5T": { speedH: "Main 3.7 / Aux 4.7", speedT: "12.5/15", motorH: "Main 13kW x 8P / Aux 5.5kW x 6P", motorT: "1.5kW x 4P / 1kW x 6P", wire: "Main Φ20 / Aux Φ16" }
     },
     "main_crp": {
-      "5/3T": { speedH: "4.7/0.47 (M)", speedT: "20/13", motorH: "5.5/1 (M)", wire: "Φ12.5 x 4줄" },
-      "10/5T": { speedH: "3.7/0.37 (M)", speedT: "12.5/8.3", motorH: "9/1.1 (M)", wire: "Φ16 x 4줄" }
+      "5/3T": { speedH: "4.7/0.47 (M)", speedT: "20/13", motorH: "Main 5.5/1kW x 6P / Aux 5.5/1.1kW x 4P", motorT: "0.75kW x 4P / 0.5kW x 6P", wire: "Φ12.5 x 4줄" },
+      "7.5/3T": { speedH: "3.1/0.31 (M)", speedT: "12.5/8.3", motorH: "Main 5.5/1kW x 6P / Aux 5.5/1.1kW x 4P", motorT: "0.75kW x 4P / 0.5kW x 6P", wire: "Φ14 x 4줄" },
+      "10/5T": { speedH: "3.7/0.37 (M)", speedT: "12.5/8.3", motorH: "Main 9/1.1kW x 8P / Aux 5.5/1kW x 6P", motorT: "0.75kW x 4P / 0.5kW x 6P", wire: "Φ16 x 4줄" },
+      "15/5T": { speedH: "3.7/0.37 (M)", speedT: "12.5/8.3", motorH: "Main 13/1.8kW x 8P / Aux 5.5/1kW x 6P", motorT: "1.5kW x 4P / 1kW x 6P", wire: "Φ20 x 4줄" }
     }
   };
 
@@ -541,6 +567,12 @@
   window.onload = function() {
     updateCapOptions(); // 탭1 초기화
     findWire();         // 탭2 초기화
+
+    // [추가] 이미지 프리로딩 실행
+    Object.values(drawingFiles).forEach(file => {
+      const img = new Image();
+      img.src = file;
+    });
   };
 
   function switchTab(idx, btn) {
@@ -576,9 +608,9 @@
     let html = "";
     if(data) {
       html += `<div class="spec-row"><span class="spec-label">권상 속도 (m/min)</span><span class="spec-val">${data.speedH}</span></div>`;
-      html += `<div class="spec-row"><span class="spec-label">주행 속도 (m/min)</span><span class="spec-val">${data.speedT}</span></div>`;
+      html += `<div class="spec-row"><span class="spec-label">횡행 속도 (m/min)</span><span class="spec-val">${data.speedT}</span></div>`;
       html += `<div class="spec-row"><span class="spec-label">권상 모터 (kW)</span><span class="spec-val">${data.motorH}</span></div>`;
-      if(data.motorT) html += `<div class="spec-row"><span class="spec-label">주행 모터 (kW)</span><span class="spec-val">${data.motorT}</span></div>`;
+      if(data.motorT) html += `<div class="spec-row"><span class="spec-label">횡행 모터 (kW)</span><span class="spec-val">${data.motorT}</span></div>`;
       html += `<div class="spec-row"><span class="spec-label">와이어 규격</span><span class="spec-val">${data.wire}</span></div>`;
     } else {
       html = `<div style="text-align:center; padding:20px; color:#666;">해당 규격 데이터가 없습니다.<br>도면을 참고하세요.</div>`;
