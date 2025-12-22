@@ -28,7 +28,8 @@
     .input-box { width: 100%; padding: 12px; background: #252525; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 1rem; margin-bottom: 10px; }
     .hidden { display: none; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-    
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+
     /* 테이블 스타일 */
     .steel-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
     .steel-table th { background: #2a2a2a; color: var(--primary); padding: 10px 5px; text-align: center; border-bottom: 1px solid #444; font-weight: 600; white-space: nowrap; position: sticky; top: 0; }
@@ -93,7 +94,7 @@
     }
     @keyframes spin { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
 
-    .btn-draw { width: 100%; background: #444; color: var(--primary); border: 1px solid var(--primary); padding: 12px; border-radius: 6px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+    .btn-draw { width: 100%; background: #444; color: var(--primary); border: 1px solid var(--primary); padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
     .btn-draw:active { background: var(--primary); color: #000; }
     
     .btn-parts { background: #333; color: #fff; border: 1px solid #666; } 
@@ -176,7 +177,7 @@
               <option value="35">35 Ton</option>
             </select>
           </div>
-          <button class="btn-draw" onclick="openPartsPDF()" style="flex: 1; margin:0; background:#333; border:1px solid var(--safe); color:#fff;">PDF 열기 ↗</button>
+          <button class="btn-draw" onclick="openPartsPDF()" style="flex: 1; margin:0; background:#333; border:1px solid var(--safe); color:#fff;">PDF 바로보기 ↗</button>
         </div>
       </div>
     </div>
@@ -398,14 +399,23 @@
     showModal(fileName);
   }
 
-  // [추가됨] 부품도 보기 (PDF 새창 열기)
+  // [기능] 부품도 보기 (PDF 구글뷰어로 열기) - 다운로드 방지
   function openPartsPDF() {
-    const ton = document.getElementById('partsTon').value;
-    if(!ton) return alert("용량을 선택해주세요.");
+    let cap = document.getElementById('partsTon').value;
+    if(!cap) return alert("용량을 선택해주세요.");
     
-    // 파일명 규칙: 숫자 + ton.pdf (소문자)
-    const fileName = ton + "ton.pdf";
-    window.open(fileName, '_blank');
+    // PDF 파일명 규칙 (소문자)
+    const fileName = cap + "ton.pdf";
+    
+    // 현재 URL을 기준으로 절대 주소 생성
+    // (GitHub Pages에서만 작동함)
+    const fullUrl = new URL(fileName, window.location.href).href;
+    
+    // 구글 뷰어 URL 생성
+    const viewerUrl = "https://docs.google.com/viewer?embedded=false&url=" + encodeURIComponent(fullUrl);
+    
+    // 새 창에서 뷰어 열기
+    window.open(viewerUrl, '_blank');
   }
 
   // 모달 표시 (이미지용)
