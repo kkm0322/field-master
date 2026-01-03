@@ -373,6 +373,14 @@
         <button class="btn-draw" onclick="openPinionPDF()" style="width:100%; background:#333; border:1px solid #FF9800; color:#fff;">부품도 보기 (PDF) ↗</button>
       </div>
 
+      <div class="card" style="border-left: 4px solid var(--primary);">
+        <h3 class="card-title" style="color:var(--primary); border:none; padding-left:0;">🛤️ 레일 규격표 (Rail Spec)</h3>
+        <p style="color:#aaa; font-size:0.85rem; margin-bottom:15px;">
+          주행 및 횡행 레일 상세 제원 및 단면도입니다.
+        </p>
+        <button class="btn-draw" onclick="openRailPDF()" style="width:100%; background:#333; border:1px solid var(--primary); color:#fff;">규격표 보기 (PDF) ↗</button>
+      </div>
+
     </div>
 
     <div id="tab5" class="tab-content hidden">
@@ -496,8 +504,6 @@
   function openWheelPDF() {
     const val = document.getElementById('wheelSelect').value;
     if(!val) return alert("규격을 선택해주세요.");
-    
-    // 파일명 규칙: wheel-숫자.pdf
     const fileName = "wheel-" + val + ".pdf";
     const fullUrl = new URL(fileName, window.location.href).href;
     const viewerUrl = "https://docs.google.com/viewer?embedded=false&url=" + encodeURIComponent(fullUrl);
@@ -506,8 +512,16 @@
 
   // [피니언 기어 도면 PDF 열기 기능]
   function openPinionPDF() {
-    // 파일명 규칙: pinion_gear.pdf
     const fileName = "pinion_gear.pdf";
+    const fullUrl = new URL(fileName, window.location.href).href;
+    const viewerUrl = "https://docs.google.com/viewer?embedded=false&url=" + encodeURIComponent(fullUrl);
+    window.open(viewerUrl, '_blank');
+  }
+
+  // [NEW] 레일 규격표 PDF 열기 기능
+  function openRailPDF() {
+    // 파일명 규칙: rail_spec.pdf
+    const fileName = "rail_spec.pdf";
     const fullUrl = new URL(fileName, window.location.href).href;
     const viewerUrl = "https://docs.google.com/viewer?embedded=false&url=" + encodeURIComponent(fullUrl);
     window.open(viewerUrl, '_blank');
