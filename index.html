@@ -342,19 +342,27 @@
     </div>
 
     <div id="tab4" class="tab-content hidden">
-      <div class="card">
-        <h3 class="card-title">⚙️ 호이스트 휠 (Wheel)</h3>
-        <table class="steel-table">
-          <thead><tr><th>호칭경(Ø)</th><th>트레드 폭(B)</th><th>적용 톤수</th></tr></thead>
-          <tbody>
-            <tr><td>Ø 120</td><td>35 mm</td><td>0.5 ~ 1T</td></tr>
-            <tr><td>Ø 150</td><td>45 mm</td><td>1 ~ 2T</td></tr>
-            <tr><td>Ø 180</td><td>55 mm</td><td>2.8T</td></tr>
-            <tr><td>Ø 200</td><td>60 mm</td><td>3 ~ 5T</td></tr>
-            <tr><td>Ø 250</td><td>70 mm</td><td>5 ~ 7.5T</td></tr>
-            <tr><td>Ø 315</td><td>80 mm</td><td>10T 이상</td></tr>
-          </tbody>
-        </table>
+      <div class="card" style="border-left: 4px solid #00C4FF;">
+        <h3 class="card-title" style="color:#00C4FF; border:none; padding-left:0;">⚙️ 휠 부품도 (Wheel Parts)</h3>
+        
+        <div style="display: flex; gap: 10px; align-items: flex-end;">
+          <div style="flex: 1;">
+            <label style="color:#aaa; font-size:0.8rem; margin-bottom:5px; display:block;">휠 규격 선택 (Ø)</label>
+            <select id="wheelSelect" class="input-box" style="margin-bottom:0;">
+              <option value="160">Ø 160</option>
+              <option value="200">Ø 200</option>
+              <option value="250">Ø 250</option>
+              <option value="315">Ø 315</option>
+              <option value="350">Ø 350</option>
+              <option value="400">Ø 400</option>
+              <option value="450">Ø 450</option>
+              <option value="500">Ø 500</option>
+              <option value="550">Ø 550</option>
+              <option value="630">Ø 630</option>
+            </select>
+          </div>
+          <button class="btn-draw" onclick="openWheelPDF()" style="flex: 1; margin:0; background:#333; border:1px solid #00C4FF; color:#fff;">도면 보기 ↗</button>
+        </div>
       </div>
     </div>
 
@@ -472,6 +480,20 @@
     const fileName = cap + "ton.pdf";
     const fullUrl = new URL(fileName, window.location.href).href;
     const viewerUrl = "https://docs.google.com/viewer?embedded=false&url=" + encodeURIComponent(fullUrl);
+    window.open(viewerUrl, '_blank');
+  }
+  
+  // [NEW] 휠 도면 PDF 열기 기능 (파일명 수정됨: wheel-숫자.pdf)
+  function openWheelPDF() {
+    const val = document.getElementById('wheelSelect').value;
+    if(!val) return alert("규격을 선택해주세요.");
+    
+    // 파일명 규칙: wheel-숫자.pdf
+    const fileName = "wheel-" + val + ".pdf";
+    
+    const fullUrl = new URL(fileName, window.location.href).href;
+    const viewerUrl = "https://docs.google.com/viewer?embedded=false&url=" + encodeURIComponent(fullUrl);
+    
     window.open(viewerUrl, '_blank');
   }
 
